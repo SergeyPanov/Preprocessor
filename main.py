@@ -42,8 +42,8 @@ def image_to_vector(image):
 def vectorize(path):
     if not os.path.isdir(path):
         print("Directory does not exists.", file=sys.stderr)
-    bw_path = path + "_bw_preproc"
-    vec_path = path + "_vec_preproc"
+    bw_path = "bw_preproc_" + path
+    vec_path = "vec_preproc_" + path
 
     if not os.path.isdir(bw_path):
         os.mkdir(bw_path)
