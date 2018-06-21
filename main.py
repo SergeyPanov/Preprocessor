@@ -8,18 +8,18 @@ BASIC_EXTENSION = ".png"
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--prep", action="store_true", help="Execute preprocessing. Convert images into black-white images and create file with vectors.", default=None)
-parser.add_argument("--resource", help="Path to directory with files supposed to be the same size.", default=None)
+parser.add_argument("--greyscale", action="store_true", help="Execute greyscaling.", default=None)
+parser.add_argument("--path", help="Path to source.", default=None)
 
-parser.add_argument("--posp", action="store_true", help="Execute postprocessing. Convert vectors into black-white images.", default=None)
+parser.add_argument("--posp", action="store_true",
+                    help="Execute postprocessing. Convert vectors into black-white images.", default=None)
 
 parser.add_argument("--width", help="Width of image.", default=None, type=int)
 parser.add_argument("--height", help="Height of image.", default=None, type=int)
-parser.add_argument("--vectors", help="Path to file with vectors.", default=None)
+
+parser.add_argument("--vec", action="store_true", help="Execute vectorization.", default=None)
 
 args = parser.parse_args()
-
-
 
 
 def bw_cast(image):
@@ -38,26 +38,30 @@ def image_to_vector(image):
     return vector
 
 
-
-def vectorize(path):
+def greyscale(path):
     if not os.path.isdir(path):
         print("Directory does not exists.", file=sys.stderr)
     bw_path = "bw_preproc_" + path
-    vec_path = "vec_preproc_" + path
 
     if not os.path.isdir(bw_path):
         os.mkdir(bw_path)
-
-    if not os.path.isdir(vec_path):
-        os.mkdir(vec_path)
-
-    vectors = []
 
     contents = os.listdir(path)
     for c in contents:
         bw_image = bw_cast(path + "/" + c)
         bw_image.save(bw_path + '/' + c)
-        vectors.append(image_to_vector(bw_image))
+
+
+def vectorize(path):
+    if not os.path.isdir(path):
+        print("File does not exists.", file=sys.stderr)
+    vec_path = "vec_preproc_" + path
+    if not os.path.isdir(vec_path):
+        os.mkdir(vec_path)
+    vectors = []
+    contents = os.listdir(path)
+    for image in contents:
+        vectors.append(image_to_vector(Image.open(path + image)))
 
     with open(vec_path + '/vectors', 'w') as vecs:
         for vec in vectors:
@@ -65,7 +69,8 @@ def vectorize(path):
 
 
 def vec_to_image(path, w, h):
-    os.mkdir(RESTORE_DIR)
+    if not os.path.exists(RESTORE_DIR):
+        os.mkdir(RESTORE_DIR)
     with open(path, "r") as input_file:
         lines = input_file.readlines()
 
@@ -84,16 +89,12 @@ def vec_to_image(path, w, h):
 
 
 if __name__ == '__main__':
-    if args.prep != None:
-        if args.resource != None:
-            vectorize(args.resource)
-        else:
-            print("Resource parameter is required.", file=sys.stderr)
-            exit(1)
 
-    if args.posp != None:
-        if args.width != None and args.height != None and args.vectors != None:
-            vec_to_image(args.vectors, args.width, args.height)
-        else:
-            print("Size and path to vectors are required.", file=sys.stderr)
-            exit(1)
+    if args.path != None:
+        if args.greyscale != None:
+            greyscale(args.path)
+        if args.vec != None:
+            if args.path != None:
+                vectorize(args.path)
+        if args.posp != None and args.width != None and args.height != None:
+            vec_to_image(args.path, args.width, args.height)
